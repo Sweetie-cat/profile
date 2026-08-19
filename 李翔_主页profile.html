@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>李翔 · AI 产品经理｜3D 个人主页</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<style>
+  :root{
+    --ink:#14171f;
+    --cream:#f3f0e9;
+    --paper:#f8f6f0;
+    --accent:#d2603a;      /* 温度 terracotta */
+    --accent2:#ea8a5c;
+    --heal:#5b8c88;        /* 疗愈 雾青绿 */
+    --heal2:#9ac6c0;
+    --gold:#e0a24a;
+    --deep:#1b2340;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+  body{font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--ink);color:var(--cream);-webkit-font-smoothing:antialiased;line-height:1.6}
+  .serif{font-family:"Noto Serif SC",Georgia,serif}
+  .mono{font-family:"SF Mono","Roboto Mono",ui-monospace,monospace}
+  h1,h2,h3{font-weight:800;letter-spacing:-.02em;line-height:1.05}
+  img{display:block;max-width:100%}
+  a{color:inherit}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:80;display:flex;justify-content:space-between;align-items:center;
+    padding:16px 5vw;mix-blend-mode:difference;color:#fff}
+  .brand{font-weight:900;letter-spacing:.04em;font-size:19px}
+  .brand em{color:var(--accent);font-style:normal}
+  .navlinks{display:flex;gap:20px;flex-wrap:wrap;justify-content:flex-end}
+  .navlinks a{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:inherit;text-decoration:none;opacity:.8;position:relative;cursor:pointer}
+  .navlinks a::after{content:"";position:absolute;left:0;right:100%;bottom:-4px;height:1px;background:currentColor;transition:right .35s cubic-bezier(.2,.7,.2,1)}
+  .navlinks a:hover,.navlinks a.active{opacity:1}
+  .navlinks a.active::after{right:0}
+  @media(max-width:900px){.navlinks{display:none}}
+
+  .scroll-progress{position:fixed;top:0;left:0;height:3px;width:0%;background:var(--accent);z-index:120;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .page-dots{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:80;display:flex;flex-direction:column;gap:10px}
+  .page-dots button{width:9px;height:9px;border-radius:50%;border:none;background:rgba(140,140,150,.5);cursor:pointer;padding:0;transition:.3s}
+  .page-dots button.active{background:var(--accent);transform:scale(1.35)}
+  @media(max-width:720px){.page-dots{display:none}}
+
+  /* ===== 翻页 slide deck ===== */
+  .slide{position:fixed;inset:0;width:100%;height:100vh;height:100dvh;opacity:0;visibility:hidden}
+  .slide.init{opacity:1;visibility:visible}
+
+  /* 模型屏 */
+  .model-slide{overflow:hidden}
+  #w1,#w3{background:#14171f}
+  #w2{background:#3f7d78;color:var(--ink)}
+  #w4{background:#b4472a}
+  #w5{background:#efe7da;color:var(--ink)}
+  .model-slide canvas{width:100%;height:100%;display:block;position:absolute;inset:0;z-index:2;cursor:grab}
+  .model-slide canvas.dragging{cursor:grabbing}
+  #w1,#w3,#w4{color:var(--cream)}
+  #w2,#w5{color:var(--ink)}
+
+  .m-topleft{position:absolute;top:90px;left:5vw;z-index:6;max-width:34ch}
+  .m-brand-row{display:flex;align-items:center;gap:10px}
+  .m-logo{width:34px;height:34px;border-radius:50%;background:currentColor;display:flex;align-items:center;justify-content:center;flex:none}
+  .m-logo span{font-weight:900;font-size:13px}
+  #w1 .m-logo span,#w3 .m-logo span,#w4 .m-logo span{color:var(--ink)}
+  #w2 .m-logo span,#w5 .m-logo span{color:var(--cream)}
+  .m-brand-text{font-size:11px;letter-spacing:.1em;text-transform:uppercase;line-height:1.4;opacity:.9}
+  .m-brand-text b{display:block;font-size:13px;letter-spacing:.03em}
+  .m-topright{position:absolute;top:34px;right:5vw;z-index:6;font-size:11px;font-weight:800;
+    letter-spacing:.3em;text-transform:uppercase;opacity:.32;transform:rotate(-6deg);transform-origin:100% 0}
+  .m-bigtext{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);z-index:1;text-align:center;
+    font-size:min(22vw,280px);font-weight:900;letter-spacing:-.04em;opacity:.3;line-height:1;pointer-events:none;user-select:none}
+  .m-bigtext small{display:block;font-size:.12em;letter-spacing:.5em;opacity:.7;margin-top:.4em;font-weight:700}
+  .m-bottomleft{position:absolute;left:5vw;bottom:56px;z-index:6}
+  .m-tag-no{font-size:34px;font-weight:900;line-height:1}
+  .m-tag-cat{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:4px}
+  .m-hint{margin-top:16px;font-size:11px;opacity:.55;letter-spacing:.05em}
+  .m-link{margin-top:14px;display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  .m-arrow{width:30px;height:30px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;transition:.3s}
+  .m-arrow.bob{animation:bob 1.8s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+  .m-link:hover .m-arrow{background:currentColor;color:var(--ink)}
+  @media(max-width:720px){.m-bigtext{font-size:min(30vw,180px)}.m-topright{display:none}.m-topleft{top:74px}}
+
+  /* 内容屏（独立、可内部滚动） */
+  .content-slide{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  .content-slide::-webkit-scrollbar{width:8px}
+  .content-slide::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:4px}
+  #c1{background:#141a26;border-top:2px solid var(--deep)}
+  #c2{background:#16211f;border-top:2px solid var(--heal)}
+  #c3{background:#1c140f;border-top:2px solid var(--accent)}
+  #c4{background:#241310;border-top:2px solid var(--accent2)}
+  #c5{background:#14171f;border-top:2px solid var(--gold)}
+  .m-content{position:relative;z-index:2;max-width:920px;margin:0 auto;padding:104px 5vw 90px;width:100%}
+  .m-content .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent2);font-weight:800;margin-bottom:12px}
+  .m-content h2{font-size:clamp(1.8rem,4.5vw,2.8rem);margin-bottom:10px}
+  .m-content .sub{opacity:.72;max-width:60ch;margin-bottom:28px;font-size:.98rem}
+
+  .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px 24px;margin-bottom:16px}
+  .card h3{font-size:1.1rem;margin-bottom:2px}
+  .card .meta{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent2);margin-bottom:12px}
+  .card ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .card li{position:relative;padding-left:18px;font-size:.93rem;opacity:.9}
+  .card li::before{content:"";position:absolute;left:2px;top:9px;width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.7}
+  .card li b{color:#fff}
+  .badge{display:inline-block;background:rgba(210,96,58,.2);color:var(--accent2);font-weight:700;font-size:.72rem;padding:3px 10px;border-radius:6px;margin-left:6px}
+  .badge.h{background:rgba(91,140,136,.25);color:var(--heal2)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:6px 13px;font-size:.8rem}
+  .beliefs{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:18px}
+  .belief{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px 18px}
+  .belief .n{font-family:Georgia,serif;font-size:1.4rem;color:var(--accent2);font-weight:700}
+  .belief p{font-size:.88rem;opacity:.85;margin-top:6px}
+
+  video{width:100%;border-radius:14px;background:#000;aspect-ratio:16/9;margin-bottom:16px}
+  .poster-figure{margin:0 0 16px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.14);cursor:zoom-in;background:#000}
+  .poster-figure img{width:100%;display:block;transition:transform .3s}
+  .poster-figure:hover img{transform:scale(1.02)}
+  .intro-row{display:grid;grid-template-columns:1fr 210px;gap:30px;align-items:center;margin-bottom:22px}
+  .intro-row .sub{margin-bottom:0}
+  .portrait{margin:0}
+  .portrait img{width:210px;height:270px;object-fit:cover;border-radius:16px;border:3px solid rgba(255,255,255,.85);box-shadow:0 22px 50px -20px rgba(0,0,0,.6);cursor:zoom-in}
+  @media(max-width:640px){.intro-row{grid-template-columns:1fr;justify-items:start}.portrait img{width:150px;height:190px}}
+  .pv-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch;margin-bottom:16px}
+  @media(max-width:640px){.pv-row{grid-template-columns:1fr}}
+  .pv-row .poster-figure,.pv-row video{margin:0;width:100%;aspect-ratio:16/9;height:auto}
+  .pv-row .poster-figure img{width:100%;height:100%;object-fit:contain;background:#000}
+  .corner-logos{position:absolute;top:-4px;right:0;display:flex;gap:12px;z-index:3}
+  .corner-logos img{height:104px;background:#fff;border-radius:10px;padding:8px;object-fit:contain;cursor:zoom-in;box-shadow:0 10px 26px rgba(0,0,0,.3)}
+  @media(max-width:720px){.corner-logos{position:static;margin-bottom:14px}.corner-logos img{height:76px}}
+  .courses{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .course{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 14px}
+  .course .cn{font-size:.9rem;opacity:.92}
+  .course .cs{font-family:Georgia,serif;font-weight:800;font-size:1.1rem;color:var(--accent2);line-height:1}
+  .radar-wrap{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:28px;align-items:center;margin-bottom:18px}
+  @media(max-width:760px){.radar-wrap{grid-template-columns:1fr}}
+  #radarSvg{width:100%;height:auto;display:block}
+  .radar-legend{list-style:none;display:flex;flex-direction:column;gap:12px}
+  .radar-legend li{position:relative;padding-left:16px;font-size:.92rem}
+  .radar-legend li::before{content:"";position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .radar-legend b{color:#fff}
+  .radar-legend em{font-style:normal;font-family:Georgia,serif;color:var(--accent2);font-weight:800;margin-left:6px}
+  .radar-legend small{display:block;opacity:.68;font-size:.82rem;margin-top:2px}
+  .cert-row{display:flex;gap:26px;align-items:center}
+  .cert-textwrap{height:250px;display:flex;align-items:center;justify-content:center}
+  .cert-text-v{writing-mode:vertical-rl;text-orientation:upright;letter-spacing:.24em;font-weight:800;font-size:1.15rem;line-height:1.7;white-space:nowrap}
+  .cert-img{height:250px;border-radius:12px;border:1px solid rgba(255,255,255,.16);cursor:zoom-in;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+  @media(max-width:560px){.cert-row{gap:16px}.cert-textwrap,.cert-img{height:180px}.cert-text-v{font-size:.95rem}}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  @media(max-width:560px){.stat-row{grid-template-columns:1fr}}
+  .stat{background:rgba(154,198,192,.14);border:1px solid rgba(154,198,192,.3);border-radius:12px;padding:16px;text-align:center}
+  .stat .big{font-family:Georgia,serif;font-size:1.7rem;font-weight:800;color:var(--heal2)}
+  .stat .lbl{font-size:.78rem;opacity:.7;margin-top:4px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:18px}
+  .flow span{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:6px 13px;font-size:.82rem}
+  .flow .arw{border:none;background:none;color:var(--accent2);font-weight:800}
+  .subhead{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;opacity:.6;font-weight:800;margin:18px 0 10px}
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media(max-width:600px){.gallery{grid-template-columns:repeat(2,1fr)}}
+  .gallery figure{margin:0;cursor:zoom-in;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.14)}
+  .gallery figure img{width:100%;height:140px;object-fit:cover;transition:transform .3s}
+  #c4 .gallery figure img{height:220px}
+  @media(max-width:600px){#c4 .gallery figure img{height:180px}}
+  .gallery figure:hover img{transform:scale(1.05)}
+  .gallery figcaption{font-size:.72rem;opacity:.6;padding:7px;text-align:center}
+  .endorse{background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.2);border-radius:12px;padding:14px;margin-top:10px}
+  .endorse .t{font-size:.78rem;opacity:.65;text-align:center;margin-bottom:10px}
+  .endorse .imgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+  .endorse .imgs img{width:100%;height:200px;object-fit:contain;background:#fff;border-radius:10px;padding:12px;cursor:zoom-in;box-shadow:0 10px 26px rgba(0,0,0,.28);transition:transform .2s}
+  .endorse .imgs img:hover{transform:translateY(-3px)}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;text-decoration:none;
+    padding:11px 18px;border-radius:11px;font-weight:700;font-size:.9rem;margin-top:6px;transition:.2s}
+  .btn:hover{background:var(--accent2);transform:translateY(-2px)}
+  .btn.h{background:var(--heal)}.btn.h:hover{background:var(--heal2);color:var(--ink)}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.3)}
+
+  .honors{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
+  @media(max-width:820px){.honors{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:560px){.honors{grid-template-columns:repeat(2,1fr)}}
+  .honor{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden}
+  .honor img{width:100%;height:130px;object-fit:cover;cursor:zoom-in;background:#2a2a2a}
+  .honor .cap{padding:9px 11px;font-size:.76rem;line-height:1.4;opacity:.88}
+  .honor .cap b{color:var(--accent2);font-size:.68rem;display:block;margin-top:4px}
+
+  .skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:18px}
+  .skill{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:18px 20px}
+  .skill h4{font-size:.78rem;letter-spacing:.13em;text-transform:uppercase;color:var(--accent2);margin-bottom:8px}
+  .skill.h h4{color:var(--heal2)}
+  .skill p{font-size:.86rem;opacity:.85}
+  .contacts{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
+
+  /* ===== 手机端适配 ===== */
+  @media(max-width:720px){
+    nav{padding:12px 5vw}
+    .brand{font-size:16px}
+    .m-content{padding:76px 6vw 90px}
+    .m-content h2{font-size:clamp(1.5rem,6.4vw,2rem)}
+    .m-content .sub{font-size:.92rem;margin-bottom:22px}
+    .m-topleft{top:62px;max-width:66vw}
+    .m-bottomleft{bottom:42px;left:6vw}
+    .m-tag-no{font-size:26px}
+    .m-bigtext{font-size:min(34vw,150px);opacity:.22}
+    .beliefs{grid-template-columns:1fr}
+    .card{padding:18px 16px}
+    .courses{grid-template-columns:repeat(2,1fr)}
+    .contacts .btn{flex:1 1 auto;justify-content:center}
+    /* 页码点移到底部居中横排 */
+    .page-dots{display:flex;flex-direction:row;top:auto;bottom:16px;left:50%;right:auto;transform:translateX(-50%)}
+    .page-dots button{width:8px;height:8px}
+  }
+  @media(max-width:440px){
+    .courses{grid-template-columns:1fr}
+    .endorse .imgs{grid-template-columns:1fr 1fr}
+    .endorse .imgs img{height:150px}
+    .stat .big{font-size:1.4rem}
+    .cert-textwrap,.cert-img{height:160px}
+  }
+
+  /* lightbox */
+  #lb{position:fixed;inset:0;background:rgba(10,12,18,.94);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;padding:32px}
+  #lb.open{display:flex}
+  #lb img{max-width:92vw;max-height:82vh;border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  #lb .cap{color:#e8e8ee;margin-top:14px;font-size:.9rem;text-align:center;max-width:80vw}
+  #lb .x{position:absolute;top:18px;right:26px;color:#fff;font-size:2rem;cursor:pointer;opacity:.8}
+  #lb .nav{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font-size:2.4rem;cursor:pointer;opacity:.6;user-select:none;padding:0 16px}
+  #lb .nav:hover,#lb .x:hover{opacity:1}#lb .prev{left:4px}#lb .next{right:4px}
+
+  /* cursor */
+  .cursor-dot,.cursor-ring{position:fixed;top:0;left:0;pointer-events:none;z-index:210;border-radius:50%;transform:translate(-50%,-50%);mix-blend-mode:difference}
+  .cursor-dot{width:7px;height:7px;background:#fff}
+  .cursor-ring{width:32px;height:32px;border:1.5px solid #fff;opacity:.6;transition:width .3s,height .3s,border-color .3s}
+  .cursor-ring.hover{width:56px;height:56px;border-color:var(--accent);opacity:1}
+  @media(hover:hover) and (pointer:fine){body,a{cursor:none}}
+  @media(hover:none),(pointer:coarse){.cursor-dot,.cursor-ring{display:none}}
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav id="nav">
+  <div class="brand">李<em>翔</em> · AI PM</div>
+  <div class="navlinks">
+    <a data-slide="0">简介</a><a data-slide="2">科研·实习</a><a data-slide="4">星璇律动</a><a data-slide="6">公益</a><a data-slide="8">能力</a>
+  </div>
+</nav>
+
+<div class="page-dots" id="pageDots"></div>
+
+<!-- ===== 01 · The Storyteller · 模型屏 ===== -->
+<div class="slide model-slide init" id="w1" data-model="w1">
+  <canvas id="c1canvas"></canvas>
+  <div class="m-topleft"><div class="m-brand-row"><div class="m-logo"><span>LX</span></div>
+    <div class="m-brand-text">李翔 LI XIANG<br><b>AI 产品经理 · 2026</b></div></div></div>
+  <div class="m-topright">PROLOGUE</div>
+  <div class="m-bigtext serif">STORY<small>STORYTELLER</small></div>
+  <div class="m-bottomleft">
+    <div class="m-tag-no mono">#01</div>
+    <div class="m-tag-cat mono">/ The Storyteller · 叙事表达者</div>
+    <div class="m-hint">✦ 可拖拽旋转模型 · 滚轮 / ↓ 翻页</div>
+    <a class="m-link"><span class="m-arrow bob">↓</span> 进入</a>
+  </div>
+</div>
+
+<!-- ===== 01 · 内容屏 ===== -->
+<div class="slide content-slide" id="c1">
+  <div class="m-content">
+    <div class="eyebrow">01 / The Storyteller · 叙事表达者</div>
+    <div class="intro-row">
+      <div>
+        <h2 class="serif">你好，我是李翔</h2>
+        <p class="sub">先花两分钟，让我把自己讲给你听。我在山东大学同时修读行政管理（管理学）与电子科学与技术（工学）——工科让我能亲手把想法做成产品，公共政策、心理学与社会实验，让我始终把"人"放在技术之前。所以我一头扎进 AI+教育、AI+心理：让先进的技术，真正被人需要。</p>
+      </div>
+      <figure class="portrait"><img class="lb" data-cap="李翔 · 证件照" src="https://i.imgs.ovh/2026/08/18/b21b1accd65ce7bd5c184d9fd95fc65a.jpg" loading="lazy" alt="李翔 证件照"></figure>
+    </div>
+    <div class="beliefs">
+      <div class="belief"><div class="n">01</div><p>AI 产品的价值，取决于是否真正解决了人的具体问题，而非模型多先进。</p></div>
+      <div class="belief"><div class="n">02</div><p>好的 AI PM 既懂技术边界与成本，也懂用户与社会的真实处境。</p></div>
+      <div class="belief"><div class="n">03</div><p>结果导向：从 0 到 1 把想法落地成能用、有人用、用得好的产品。</p></div>
+    </div>
+    <div class="card">
+      <h3>我的起点 · 山东大学</h3>
+      <div class="meta">行政管理 + 电子科学与技术（管理学+工学）· 2023.09–2028.06 · GPA 88.47</div>
+      <div class="chips"><span class="chip">CET-4 579</span><span class="chip">CET-6 525</span><span class="chip">高中英语教师资格证</span></div>
+      <div class="subhead" style="margin:16px 0 10px">核心课程 · 成绩</div>
+      <div class="courses">
+        <div class="course"><span class="cn">操作系统</span><span class="cs">99</span></div>
+        <div class="course"><span class="cn">高等数学</span><span class="cs">98</span></div>
+        <div class="course"><span class="cn">公共政策</span><span class="cs">98</span></div>
+        <div class="course"><span class="cn">高级编程技术</span><span class="cs">97</span></div>
+        <div class="course"><span class="cn">单片机原理</span><span class="cs">96</span></div>
+        <div class="course"><span class="cn">公共行政学</span><span class="cs">93</span></div>
+        <div class="course"><span class="cn">图像处理与计算机视觉</span><span class="cs">93</span></div>
+        <div class="course"><span class="cn">信息检索与数据挖掘</span><span class="cs">92</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 02 · The Explorer · 模型屏 ===== -->
+<div class="slide model-slide" id="w3" data-model="w3">
+  <canvas id="c3canvas"></canvas>
+  <div class="m-topleft"><div class="m-brand-row"><div class="m-logo"><span>LX</span></div>
+    <div class="m-brand-text">李翔 LI XIANG<br><b>科研 & 实习</b></div></div></div>
+  <div class="m-topright">RESEARCH</div>
+  <div class="m-bigtext serif">EXPLORE<small>EXPLORER</small></div>
+  <div class="m-bottomleft">
+    <div class="m-tag-no mono">#02</div>
+    <div class="m-tag-cat mono">/ The Explorer · 边界研究者</div>
+    <a class="m-link"><span class="m-arrow bob">↓</span> 看探索</a>
+  </div>
+</div>
+
+<!-- ===== 02 · 内容屏 ===== -->
+<div class="slide content-slide" id="c3">
+  <div class="m-content">
+    <div class="eyebrow">02 / The Explorer · 边界研究者</div>
+    <h2 class="serif">在 AI 的边界上探路</h2>
+    <p class="sub">我想弄清 AI 到底"能做什么、做到什么程度"——所以我既钻进顶会论文做严谨评测，也在真实产品里验证 AI 的落地边界。</p>
+    <div class="card">
+      <h3>ClassEval-T：大语言模型类级代码翻译评测 <span class="badge">CCF-A · ISSTA 2025</span></h3>
+      <div class="meta">山东大学 体系结构与嵌入式系统研究中心 · 2024.07 – 2025.03</div>
+      <ul>
+        <li>参与构建首个类级代码翻译评测集，负责 Python-to-Java 翻译实现与错误归因。</li>
+        <li>系统评测 DeepSeek-V3、GPT-4o、Claude-3.5-Sonnet 等主流 LLM；搭建 Java 自动评测框架（编译/测试/类通过率三层），归纳 7 大类错误机制。</li>
+        <li><b>成果：</b>为山东大学首篇 ISSTA 论文并获校官网报道，评测集已在 GitHub 开源。</li>
+      </ul>
+      <a class="btn ghost" href="https://arxiv.org/pdf/2411.06145" target="_blank" rel="noopener">📄 阅读 arXiv 全文</a>
+    </div>
+    <div class="card">
+      <h3>谣言与 AIGC 虚假信息信任侵蚀实验研究</h3>
+      <div class="meta">山东大学 社会调查实验研究 · 2025.03 – 2025.09</div>
+      <ul>
+        <li>基于情绪–认知双路径模型设计实验，对比 AIGC 内容与传统谣言对高校群体信任结构的差异化影响。</li>
+        <li>统筹团队完成实验与数据分析，获校级社会实践一等奖，并在公益媒体传播。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>AI 数字人科创短期班 · 产品实习生</h3>
+      <div class="meta">学而思（好未来）· 2026.06 – 至今</div>
+      <ul>
+        <li><b>用户研究：</b>设计结构化访谈提纲并整合权威调研，将家长分为先锋/焦虑/观望三层，构建需求优先级矩阵；提炼 5 条核心洞察，确立"知识交给 AI、情感还给真人"的产品定位。</li>
+        <li><b>用户测试：</b>主导 2 场真实课堂外测复盘，验证"学生更关注内容互动而非拟真度"，输出"AI 互动闭环""课堂唤醒机制"迭代方案。</li>
+        <li><b>需求管理：</b>梳理 21+ 条工具痛点与 bug，转化为结构化需求并与产研对齐排期，推动多项功能两个版本内落地。</li>
+        <li><b>产品设计：</b>参与 PBL+小队竞技的产品形态与商业化设计，制定做课标准与互动 SOP，产出原型支撑全国复制。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 03 · The Healer · 模型屏 ===== -->
+<div class="slide model-slide" id="w2" data-model="w2">
+  <canvas id="c2canvas"></canvas>
+  <div class="m-topleft"><div class="m-brand-row"><div class="m-logo"><span>LX</span></div>
+    <div class="m-brand-text">星璇律动<br><b>AI + 心理疗愈</b></div></div></div>
+  <div class="m-topright">FLAGSHIP</div>
+  <div class="m-bigtext serif">HEAL<small>HEALER</small></div>
+  <div class="m-bottomleft">
+    <div class="m-tag-no mono">#03</div>
+    <div class="m-tag-cat mono">/ The Healer · 情绪疗愈设计师</div>
+    <a class="m-link"><span class="m-arrow bob">↓</span> 看项目</a>
+  </div>
+</div>
+
+<!-- ===== 03 · 内容屏 ===== -->
+<div class="slide content-slide" id="c2">
+  <div class="m-content">
+    <div class="eyebrow">03 / The Healer · 情绪疗愈设计师</div>
+    <h2 class="serif">星璇律动 · AI 音乐生成与疗愈平台</h2>
+    <p class="sub">面向孤独症儿童的多模态情绪疗愈平台，从 0 到 1 落地并多地试点。主导 9 人跨学科团队，用「视觉情绪识别 + 中医五音理论 + AI 音乐生成」搭建可个性化推荐的疗愈闭环。<span class="badge h">特等奖</span><span class="badge h">项目负责人</span></p>
+    <div class="subhead">项目海报 & 演示视频</div>
+    <div class="pv-row">
+      <figure class="poster-figure"><img class="lb" data-cap="星璇律动 · 项目海报" src="https://picui.ogmua.cn/s1/2026/08/18/6a83d69fe2a1f.webp" loading="lazy" alt="星璇律动项目海报"></figure>
+      <video controls preload="metadata" playsinline src="https://oss-chat-bucket.oss-cn-beijing.aliyuncs.com/picture/console/chatres/7fd101e440d84afa8608480893e72180dfYIOjd8.mp4"></video>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><div class="big">120+</div><div class="lbl">服务孤独症儿童</div></div>
+      <div class="stat"><div class="big">15–25%</div><div class="lbl">注意力与情绪稳定性提升</div></div>
+      <div class="stat"><div class="big">2 端</div><div class="lbl">Web + 小程序落地</div></div>
+    </div>
+    <div class="subhead">核心技术闭环</div>
+    <div class="flow"><span>情绪识别</span><span class="arw">→</span><span>调式匹配</span><span class="arw">→</span><span>音乐生成</span><span class="arw">→</span><span>反馈采集</span><span class="arw">→</span><span>迭代推荐</span></div>
+    <div class="card">
+      <ul>
+        <li><b>视觉情绪识别：</b>基于 YOLOv11 在 FER-2013 + 自建孤独症儿童表情数据集上微调，解决通用模型在分布外群体效果差的问题。</li>
+        <li><b>AI 音乐生成：</b>基于 Meta MusicGen 结合自建五音调式音乐库，通过提示词工程将中医五音理论编码为可复用模板。</li>
+      </ul>
+    </div>
+    <div class="subhead">真实调研实景</div>
+    <div class="gallery">
+      <figure><img class="lb" data-cap="孤独症儿童实际调研现场" src="https://i.imgs.ovh/2026/08/18/c516d0682294cce5ea6b98a989795b08.jpg" loading="lazy" alt=""><figcaption>调研现场 ①</figcaption></figure>
+      <figure><img class="lb" data-cap="孤独症儿童实际调研现场" src="https://i.imgs.ovh/2026/08/18/ee3b2a720d463f567df39f20fc027040.jpg" loading="lazy" alt=""><figcaption>调研现场 ②</figcaption></figure>
+      <figure><img class="lb" data-cap="生理指标测量：验证疗愈效果" src="https://picui.ogmua.cn/s1/2026/08/18/6a83d5e46fa1b.webp" loading="lazy" alt=""><figcaption>生理指标验证</figcaption></figure>
+    </div>
+    <div class="endorse">
+      <div class="t">效果验证 · 多家机构背书（医院 / 学校 / 基金会 / 残疾人互助中心）· 点击看大图</div>
+      <div class="imgs">
+        <img class="lb" data-cap="机构效果验证背书" src="https://i.imgs.ovh/2026/08/18/e8f6459ab48f77bbda17e01141ec4a59.png" loading="lazy" alt="">
+        <img class="lb" data-cap="机构效果验证背书" src="https://i.imgs.ovh/2026/08/18/cdf6c7568af13b214d0470d0ac47a56b.png" loading="lazy" alt="">
+        <img class="lb" data-cap="机构效果验证背书" src="https://i.imgs.ovh/2026/08/18/16b2f93fad7fb3911d9f1a1513b359e0.png" loading="lazy" alt="">
+        <img class="lb" data-cap="机构效果验证背书" src="https://i.imgs.ovh/2026/08/18/5eb364f5915a887624534ab964406a38.jpg" loading="lazy" alt="">
+      </div>
+    </div>
+    <a class="btn h" href="https://sdustarpulse.top" target="_blank" rel="noopener">🌐 访问在线平台 sdustarpulse.top</a>
+  </div>
+</div>
+
+<!-- ===== 04 · The Connector · 模型屏 ===== -->
+<div class="slide model-slide" id="w4" data-model="w4">
+  <canvas id="c4canvas"></canvas>
+  <div class="m-topleft"><div class="m-brand-row"><div class="m-logo"><span>LX</span></div>
+    <div class="m-brand-text">李翔 LI XIANG<br><b>公益之旅</b></div></div></div>
+  <div class="m-topright">IMPACT</div>
+  <div class="m-bigtext serif">CONNECT<small>CONNECTOR</small></div>
+  <div class="m-bottomleft">
+    <div class="m-tag-no mono">#04</div>
+    <div class="m-tag-cat mono">/ The Connector · 公益联结者</div>
+    <a class="m-link"><span class="m-arrow bob">↓</span> 看公益</a>
+  </div>
+</div>
+
+<!-- ===== 04 · 内容屏 ===== -->
+<div class="slide content-slide" id="c4">
+  <div class="m-content">
+    <div class="corner-logos">
+      <img class="lb" data-cap="新华爱心教育基金会 · 5A 级公募基金会" src="https://i.imgs.ovh/2026/08/18/76b3d7debd918e03c745e0972a0d9dab.png" alt="">
+      <img class="lb" data-cap="捡回珍珠计划" src="https://i.imgs.ovh/2026/08/18/e4b21efb20438e9d2506962423199d34.jpg" alt="">
+    </div>
+    <div class="eyebrow">04 / The Connector · 公益联结者</div>
+    <h2 class="serif">我的公益之旅</h2>
+    <p class="sub">在 5A 级公募基金会担任区域执行会长，推动教育公益落地——这是我"把人放在技术之前"信念的现场。</p>
+    <div class="card">
+      <h3>新华爱心教育基金会 · 区域执行会长</h3>
+      <div class="meta">捡回珍珠计划</div>
+      <p class="sub" style="margin:8px 0 4px;font-size:.92rem">新华爱心教育基金会是全国性 5A 级公募基金会，其核心公益品牌"捡回珍珠计划"资助家庭贫困、品学兼优的高中"珍珠生"完成学业、圆梦大学。我在其中担任区域执行会长，统筹项目落地与公众沟通。</p>
+      <ul>
+        <li><b>组织推动：</b>统筹团队与跨部门协作，高效推动公益项目落地。</li>
+        <li><b>公开表达：</b>多次大会发言、公益路演，锻炼系统策划与公众沟通能力。</li>
+      </ul>
+      <div class="gallery" style="margin-top:14px">
+        <figure><img class="lb" data-cap="区域执行会长聘任" src="https://i.imgs.ovh/2026/08/18/d48ebdfef528dc907493ae73139de687.jpg" loading="lazy" alt=""><figcaption>会长聘任</figcaption></figure>
+        <figure><img class="lb" data-cap="大会发言" src="https://i.imgs.ovh/2026/08/18/559d8b5935f4b9328eba8fb6f8eeb262.jpg" loading="lazy" alt=""><figcaption>大会发言</figcaption></figure>
+        <figure><img class="lb" data-cap="公益项目路演" src="https://i.imgs.ovh/2026/08/18/98a0ea3393b49957002621cb80464a70.jpg" loading="lazy" alt=""><figcaption>公益路演</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 05 · The Builder · 模型屏 ===== -->
+<div class="slide model-slide" id="w5" data-model="w5">
+  <canvas id="c5canvas"></canvas>
+  <div class="m-topleft"><div class="m-brand-row"><div class="m-logo"><span>LX</span></div>
+    <div class="m-brand-text">李翔 LI XIANG<br><b>综合实力 & 联系</b></div></div></div>
+  <div class="m-topright">SUMMARY</div>
+  <div class="m-bigtext serif">BUILD<small>BUILDER</small></div>
+  <div class="m-bottomleft">
+    <div class="m-tag-no mono">#05</div>
+    <div class="m-tag-cat mono">/ The Builder · 产品造物者</div>
+    <a class="m-link"><span class="m-arrow bob">↓</span> 综合展示</a>
+  </div>
+</div>
+
+<!-- ===== 05 · 内容屏 ===== -->
+<div class="slide content-slide" id="c5">
+  <div class="m-content">
+    <div class="eyebrow">05 / The Builder · 产品造物者</div>
+    <h2 class="serif">跨学科实践能力</h2>
+    <p class="sub">技术、产品、数据、组织、表达、心理六条能力线，再加上一路走来的荣誉——这是我作为 AI 产品经理的全部底气。</p>
+    <div class="radar-wrap">
+      <svg id="radarSvg" viewBox="0 0 440 400" role="img" aria-label="能力雷达图"></svg>
+      <ul class="radar-legend">
+        <li><b>AI / 技术</b><em>88</em><small>掌握 Java、Python 多种编程语言，对深度学习、RAG、提示词工程和模型实验与评测有较深理解；极客挑战赛第二名</small></li>
+        <li><b>产品 / 落地</b><em>90</em><small>主导完成国家级大创需求分析·技术选型·迭代，平台 0→1 落地</small></li>
+        <li><b>数据 / 建模</b><em>84</em><small>全国大学生数学竞赛国家二等奖、高教社杯数学建模省级三等奖，负责数据分析与论文</small></li>
+        <li><b>项目 / 组织</b><em>88</em><small>担任新华爱心基金会（5A）区域执行会长、社会实践优秀团队负责人</small></li>
+        <li><b>表达 / 影响力</b><em>83</em><small>负责多项比赛的答辩汇报，荣获社会实践校级优秀个人</small></li>
+        <li><b>实验 / 心理</b><em>80</em><small>心理学实验 × AI 智能干预；获得心知杯一等奖、心理应用技能大赛省级三等奖</small></li>
+      </ul>
+    </div>
+    <div class="subhead">荣誉墙 · 11 项（均为项目负责人）</div>
+    <div class="honors" id="honorsGrid"></div>
+    <div class="card" style="margin-top:16px">
+      <div class="cert-row">
+        <div class="cert-textwrap"><div class="cert-text-v">高中英语教师资格证</div></div>
+        <img class="lb cert-img" data-cap="高中英语教师资格证" src="https://picui.ogmua.cn/s1/2026/08/19/6a854316d8a46.webp" alt="高中英语教师资格证">
+      </div>
+    </div>
+    <h2 class="serif" style="margin-top:24px">Let's Connect</h2>
+    <p class="sub">如果你也相信 AI 产品应当既先进又有温度，尤其在教育与心理领域，欢迎和我聊聊。</p>
+    <div class="contacts">
+      <a class="btn" href="tel:15660802707">📞 15660802707</a>
+      <a class="btn ghost" href="mailto:leexiang@mail.sdu.edu.cn">✉ leexiang@mail.sdu.edu.cn</a>
+      <a class="btn ghost" href="https://sdustarpulse.top" target="_blank" rel="noopener">🌐 sdustarpulse.top</a>
+      <a class="btn ghost" href="https://arxiv.org/pdf/2411.06145" target="_blank" rel="noopener">📄 arXiv 论文</a>
+    </div>
+  </div>
+</div>
+
+<!-- lightbox -->
+<div id="lb"><span class="x">&times;</span><span class="nav prev">&#10094;</span><span class="nav next">&#10095;</span><img src="" alt=""><div class="cap"></div></div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+  import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+  import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+  RectAreaLightUniformsLib.init();
+
+  const dracoLoader=new DRACOLoader();
+  dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
+
+  function ease(t){return t*t*(3-2*t);}
+  function sampleCamPath(path,p){
+    p=Math.max(0,Math.min(1,p));let i=0;
+    while(i<path.length-2&&p>path[i+1].p)i++;
+    const a=path[i],b=path[i+1],span=Math.max(b.p-a.p,1e-6),t=ease(Math.max(0,Math.min(1,(p-a.p)/span)));
+    return{pos:[a.pos[0]+(b.pos[0]-a.pos[0])*t,a.pos[1]+(b.pos[1]-a.pos[1])*t,a.pos[2]+(b.pos[2]-a.pos[2])*t],
+      look:[a.look[0]+(b.look[0]-a.look[0])*t,a.look[1]+(b.look[1]-a.look[1])*t,a.look[2]+(b.look[2]-a.look[2])*t],
+      fov:a.fov+(b.fov-a.fov)*t};
+  }
+
+  window.__models={};
+
+  /* 翻页式：每个模型屏是独立场景。进入时播放一次运镜（从 p=1 侧位 → p=0 正面），停在正面；之后可拖拽旋转。 */
+  function initModelScene(cfg){
+    const wrap=document.getElementById(cfg.wrapId),canvas=document.getElementById(cfg.canvasId);
+    if(!wrap||!canvas||!window.WebGLRenderingContext){window.__models[cfg.wrapId]={playIntro(){},resize(){}};return;}
+    const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+    renderer.setClearColor(0x000000,0);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,matchMedia('(max-width:720px)').matches?1.4:1.75));
+    renderer.outputColorSpace=THREE.SRGBColorSpace;
+    const scene=new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xf2f0e6,0x14171f,.55));
+    const rimWarm=new THREE.RectAreaLight(0xfcffab,9,3.1,3.1);rimWarm.position.set(-1.7,3.1,4.2);rimWarm.lookAt(0,1,0);scene.add(rimWarm);
+    const rimCool=new THREE.RectAreaLight(0xabc8ff,9,3.1,3.1);rimCool.position.set(3.1,3,4.2);rimCool.lookAt(0,1,0);scene.add(rimCool);
+    const key=new THREE.RectAreaLight(0xffffff,5,2.8,2.8);key.position.set(.3,1,-1.9);key.lookAt(0,1,0);scene.add(key);
+    const camera=new THREE.PerspectiveCamera(42,1,.1,100);
+    const lookVec=new THREE.Vector3(),dOff=new THREE.Vector3();
+    let loaded=false,pending=false,curP=0,introRAF=0;
+    let dragYaw=0,dragPitch=0,dragging=false,lastX=0,lastY=0;
+    function render(){renderer.render(scene,camera);}
+    function resize(){const w=Math.max(innerWidth,1),h=Math.max(innerHeight,1);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();if(loaded)render();}
+    function applyDrag(target){if(!dragYaw&&!dragPitch)return;dOff.copy(camera.position).sub(target);
+      const r=dOff.length();if(r<1e-4)return;const th=Math.atan2(dOff.x,dOff.z)+dragYaw;
+      let phi=Math.acos(Math.max(-1,Math.min(1,dOff.y/r)))-dragPitch;phi=Math.max(.15,Math.min(Math.PI-.15,phi));
+      dOff.set(r*Math.sin(phi)*Math.sin(th),r*Math.cos(phi),r*Math.sin(phi)*Math.cos(th));
+      camera.position.copy(target).add(dOff);camera.lookAt(target);}
+    function setP(p){curP=p;const s=sampleCamPath(cfg.camPath,p);
+      camera.position.set(s.pos[0],s.pos[1],s.pos[2]);lookVec.set(s.look[0],s.look[1],s.look[2]);
+      camera.lookAt(lookVec);camera.fov=s.fov;camera.updateProjectionMatrix();applyDrag(lookVec);}
+    function playIntro(){
+      if(!loaded){pending=true;return;}
+      cancelAnimationFrame(introRAF);dragYaw=0;dragPitch=0;
+      const dur=1700,t0=performance.now();
+      (function step(now){const t=Math.min(1,(now-t0)/dur);setP(1-ease(t));render(); // 从侧位(p=1)扫到正面(p=0)
+        if(t<1)introRAF=requestAnimationFrame(step);})(performance.now());
+    }
+    const gltfLoader=new GLTFLoader();gltfLoader.setDRACOLoader(dracoLoader);
+    gltfLoader.load(cfg.glbUrl,(gltf)=>{const root=gltf.scene;
+      const box=new THREE.Box3().setFromObject(root),size=new THREE.Vector3();box.getSize(size);
+      const scale=(cfg.targetHeight||2.0)/Math.max(size.y,1e-4);root.scale.setScalar(scale);
+      if(cfg.modelYaw)root.rotation.y=cfg.modelYaw;
+      const b2=new THREE.Box3().setFromObject(root),c2=new THREE.Vector3();b2.getCenter(c2);
+      root.position.x-=c2.x;root.position.z-=c2.z;root.position.y-=b2.min.y;scene.add(root);
+      loaded=true;resize();setP(0);render();
+      if(pending){pending=false;playIntro();}
+    },undefined,(err)=>{console.error(cfg.glbUrl+' 加载失败',err);});
+    canvas.addEventListener('mousedown',(e)=>{if(!loaded)return;dragging=true;lastX=e.clientX;lastY=e.clientY;canvas.classList.add('dragging');e.preventDefault();});
+    addEventListener('mousemove',(e)=>{if(!dragging)return;dragYaw+=(e.clientX-lastX)*.006;dragPitch=Math.max(-.6,Math.min(.6,dragPitch+(e.clientY-lastY)*.006));lastX=e.clientX;lastY=e.clientY;setP(curP);render();});
+    addEventListener('mouseup',()=>{if(dragging){dragging=false;canvas.classList.remove('dragging');}});
+    addEventListener('resize',resize);
+    resize();
+    window.__models[cfg.wrapId]={playIntro,resize};
+  }
+
+const P_STORY = [
+  { p: 0, pos: [2.79, 1.39, -0.20], look: [0, 1.05, 0], fov: 34 },   // 末态（停留）
+  { p: 1, pos: [2.51, 2.18, 4.19], look: [0, 1.05, 0], fov: 34 }     // 初态（进入起点）
+];
+
+const P_EXPLORE = [
+  { p: 0, pos: [3.60, 1.14, -0.84], look: [0, 1.05, 0], fov: 34 },   // 末态
+  { p: 1, pos: [2.67, 1.71, 4.46], look: [0, 1.05, 0], fov: 34 }     // 初态
+];
+
+const P_HEAL = [
+  { p: 0, pos: [3.70, 1.11, 0.02], look: [0, 1, 0], fov: 34 },       // 末态
+  { p: 1, pos: [-1.66, 1.35, 4.96], look: [0, 1, 0], fov: 34 }       // 初态
+];
+
+const P_CONNECT = [
+  { p: 0, pos: [3.38, 2.26, 0.22], look: [0, 1.1, 0], fov: 34 },     // 末态
+  { p: 1, pos: [0.06, 1.90, 5.28], look: [0, 1.1, 0], fov: 34 }      // 初态
+];
+
+const P_BUILD = [
+  { p: 0, pos: [3.75, 1.00, -1.14], look: [0, 1, 0], fov: 34 },      // 末态
+  { p: 1, pos: [-0.03, 0.42, 5.65], look: [0, 1, 0], fov: 34 }       // 初态
+];
+
+  initModelScene({wrapId:'w1',canvasId:'c1canvas',glbUrl:'models_min/演讲派.glb',camPath:P_STORY});
+  initModelScene({wrapId:'w3',canvasId:'c3canvas',glbUrl:'models_min/科研派3d.glb',camPath:P_EXPLORE});
+  initModelScene({wrapId:'w2',canvasId:'c2canvas',glbUrl:'models_min/疗愈派3d.glb',camPath:P_HEAL});
+  initModelScene({wrapId:'w4',canvasId:'c4canvas',glbUrl:'models_min/公益派.glb',camPath:P_CONNECT});
+  initModelScene({wrapId:'w5',canvasId:'c5canvas',glbUrl:'models_min/生活派3d.glb',camPath:P_BUILD});
+
+  /* ===================== 翻页控制器 ===================== */
+  const gsap=window.gsap;
+  const slides=[].slice.call(document.querySelectorAll('.slide'));
+  const navlinks=[].slice.call(document.querySelectorAll('.navlinks a'));
+  const prog=document.getElementById('scrollProgress');
+  const dotsWrap=document.getElementById('pageDots');
+  const lbEl=document.getElementById('lb');
+  let current=0,busy=false,wheelLock=false;
+
+  // 每个内容屏一个 Lenis（丝滑内部滚动）
+  const lenisMap=new Map();
+  function lenisOf(s){
+    if(lenisMap.has(s))return lenisMap.get(s);
+    let l=null;
+    if(window.Lenis){try{l=new Lenis({wrapper:s,content:s.querySelector('.m-content'),lerp:.11,smoothWheel:true,wheelMultiplier:1});}catch(e){l=null;}}
+    lenisMap.set(s,l);return l;
+  }
+  function raf(t){const s=slides[current];if(s&&s.classList.contains('content-slide')){const l=lenisMap.get(s);if(l)l.raf(t);}requestAnimationFrame(raf);}
+  requestAnimationFrame(raf);
+
+  // 页码点
+  slides.forEach((s,i)=>{const b=document.createElement('button');b.title='第 '+(i+1)+' 屏';b.addEventListener('click',()=>go(i));dotsWrap.appendChild(b);});
+  const dots=[].slice.call(dotsWrap.children);
+
+  function setActiveUI(i){
+    prog.style.width=((i)/(slides.length-1))*100+'%';
+    dots.forEach((d,k)=>d.classList.toggle('active',k===i));
+    const act=Math.floor(i/2);
+    navlinks.forEach(a=>a.classList.toggle('active',+a.dataset.slide===act*2));
+  }
+
+  function enterEffects(s,i){
+    setActiveUI(i);
+    const wid=s.getAttribute('data-model');
+    if(wid){
+      const m=window.__models[wid];if(m)m.playIntro();
+      if(gsap)gsap.from(s.querySelectorAll('.m-topleft,.m-topright,.m-bigtext,.m-bottomleft'),{y:24,autoAlpha:0,duration:.7,stagger:.08,ease:'power2.out',overwrite:true});
+    }else{
+      lenisOf(s);s.scrollTop=0;
+      if(gsap)gsap.from(s.querySelectorAll('.m-content > *'),{y:28,autoAlpha:0,duration:.55,stagger:.06,ease:'power2.out',overwrite:true});
+    }
+  }
+
+  function go(i){
+    if(busy||i<0||i>=slides.length||i===current)return;
+    busy=true;const dir=i>current?1:-1;
+    const from=slides[current],to=slides[i];
+    if(gsap){
+      gsap.set(to,{zIndex:2,autoAlpha:0});gsap.set(from,{zIndex:1});
+      const tl=gsap.timeline({onComplete:()=>{gsap.set(from,{autoAlpha:0,zIndex:0});busy=false;}});
+      tl.to(from,{autoAlpha:0,y:-46*dir,duration:.5,ease:'power2.inOut'},0)
+        .fromTo(to,{autoAlpha:0,y:52*dir},{autoAlpha:1,y:0,duration:.62,ease:'power2.out'},.08);
+    }else{
+      from.style.visibility='hidden';from.style.opacity='0';
+      to.style.visibility='visible';to.style.opacity='1';busy=false;
+    }
+    current=i;enterEffects(to,i);
+  }
+  window.__go=go;
+
+  // 初始：显示第 0 屏
+  slides.forEach((s,i)=>{if(gsap)gsap.set(s,{autoAlpha:i===0?1:0,zIndex:i===0?2:0});});
+  slides[0].classList.remove('init');
+  enterEffects(slides[0],0);
+
+  // 内容屏边界（是否还能继续内部滚动）
+  function canScroll(s,dir){
+    if(!s.classList.contains('content-slide'))return false;
+    const atTop=s.scrollTop<=1,atBot=s.scrollTop+s.clientHeight>=s.scrollHeight-1;
+    return dir>0?!atBot:!atTop;
+  }
+
+  // 滚轮翻页（内容屏未到边界时交给内部滚动/Lenis）
+  addEventListener('wheel',(e)=>{
+    if(lbEl.classList.contains('open'))return;
+    const s=slides[current];const dir=e.deltaY>0?1:-1;
+    if(canScroll(s,dir))return; // 内部还能滚 → 放行
+    e.preventDefault();e.stopPropagation();
+    if(busy||wheelLock)return;
+    wheelLock=true;setTimeout(()=>wheelLock=false,820);
+    go(current+dir);
+  },{passive:false,capture:true});
+
+  // 键盘
+  addEventListener('keydown',(e)=>{
+    if(lbEl.classList.contains('open'))return;
+    if(['ArrowDown','PageDown'].indexOf(e.key)>-1||e.key===' '){e.preventDefault();step(1);}
+    else if(['ArrowUp','PageUp'].indexOf(e.key)>-1){e.preventDefault();step(-1);}
+  });
+  function step(dir){
+    const s=slides[current];
+    if(canScroll(s,dir)){s.scrollBy({top:dir*s.clientHeight*.82,behavior:'smooth'});return;}
+    go(current+dir);
+  }
+
+  // 触摸滑动
+  let touchY=0;
+  addEventListener('touchstart',(e)=>{touchY=e.touches[0].clientY;},{passive:true});
+  addEventListener('touchend',(e)=>{
+    if(lbEl.classList.contains('open'))return;
+    const dy=touchY-e.changedTouches[0].clientY;if(Math.abs(dy)<60)return;
+    const dir=dy>0?1:-1;const s=slides[current];
+    if(canScroll(s,dir))return;
+    go(current+dir);
+  },{passive:true});
+
+  // 下箭头按钮 → 下一屏
+  document.querySelectorAll('.m-link').forEach(a=>a.addEventListener('click',(e)=>{e.preventDefault();go(current+1);}));
+  // 导航链接
+  navlinks.forEach(a=>a.addEventListener('click',(e)=>{e.preventDefault();go(+a.dataset.slide);}));
+</script>
+
+<script>
+  /* honors */
+  var HONORS=[
+    {img:"https://i.imgs.ovh/2026/08/18/1800bd6012228ca759027b20d31ac3f3.jpg",tt:"山东大学首届人工智能创新应用大赛",tg:"特等奖 · AI"},
+    {img:"https://i.imgs.ovh/2026/08/18/532c06b0303f2cd9e2c7ab7cdd8470ee.jpg",tt:"中国大学生服务外包创新大赛",tg:"国家三等奖"},
+    {img:"https://i.imgs.ovh/2026/08/18/38a943be09e6b5c81fd691869a625537.jpg",tt:"第十六届全国大学生数学竞赛（非数A）",tg:"国家二等奖"},
+    {img:"https://picui.ogmua.cn/s1/2026/08/18/6a83eae65fa36.webp",tt:"高教社杯全国大学生数学建模竞赛",tg:"省级三等奖"},
+    {img:"https://i.imgs.ovh/2026/08/18/9f9c31886939812c49e37f4472da4f9f.jpg",tt:"“智汇未来·AI 学习创新”大赛",tg:"二等奖"},
+    {img:"https://picui.ogmua.cn/s1/2026/08/18/6a83d57bebad0.webp",tt:"极客挑战赛",tg:"二等奖"},
+    {img:"https://i.imgs.ovh/2026/08/18/81eb7d2242e472ab35ca29e2d19e5b29.jpg",tt:"第三届“心知杯”心理知识学习大赛",tg:"一等奖"},
+    {img:"https://picui.ogmua.cn/s1/2026/08/18/6a83ec43d47a8.webp",tt:"山东省大学生心理学应用技能大赛",tg:"省级三等奖"},
+    {img:"https://i.imgs.ovh/2026/08/18/c51c20652e8f44de948d4a8b0be5ee62.jpg",tt:"第二届“SDU TALK”学生创新大讲堂",tg:"银奖"},
+    {img:"https://i.imgs.ovh/2026/08/18/448a6623d2fa0ce3d8d02f738cd709b1.jpg",tt:"2024-2025 暑期社会实践",tg:"校级优秀个人"},
+    {img:"https://picui.ogmua.cn/s1/2026/08/18/6a83d72ed38e1.webp",tt:"2024-2025 暑期社会实践",tg:"校级优秀调查报告"},
+  ];
+  var grid=document.getElementById('honorsGrid');
+  if(grid){HONORS.forEach(function(h){var d=document.createElement('div');d.className='honor';
+    d.innerHTML='<img class="lb" data-cap="'+h.tt+' · '+h.tg+'（负责人）" src="'+h.img+'" loading="lazy" alt="">'+
+      '<div class="cap">'+h.tt+'<b>'+h.tg+' · 负责人</b></div>';grid.appendChild(d);});}
+
+  /* 能力雷达图（纯 SVG，无依赖） */
+  (function(){
+    var svg=document.getElementById('radarSvg');if(!svg)return;
+    var cx=220,cy=200,R=140,MAX=100;
+    var axes=[{k:'技术',v:88},{k:'产品',v:90},{k:'数据',v:84},{k:'组织',v:88},{k:'表达',v:83},{k:'心理',v:80}];
+    var N=axes.length;
+    function ang(i){return (-90+i*(360/N))*Math.PI/180;}
+    function pt(i,r){return [cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i))];}
+    var s='';
+    [0.25,0.5,0.75,1].forEach(function(lv){
+      var pts=[];for(var i=0;i<N;i++){var p=pt(i,R*lv);pts.push(p[0].toFixed(1)+','+p[1].toFixed(1));}
+      s+='<polygon points="'+pts.join(' ')+'" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1"/>';
+    });
+    for(var i=0;i<N;i++){
+      var e=pt(i,R);s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+e[0].toFixed(1)+'" y2="'+e[1].toFixed(1)+'" stroke="rgba(255,255,255,.14)" stroke-width="1"/>';
+      var lp=pt(i,R+24),a=ang(i),anc=Math.cos(a)>0.3?'start':(Math.cos(a)<-0.3?'end':'middle'),dy=Math.sin(a)>0.3?13:(Math.sin(a)<-0.3?-7:5);
+      s+='<text x="'+lp[0].toFixed(1)+'" y="'+(lp[1]+dy).toFixed(1)+'" text-anchor="'+anc+'" fill="#e9e4da" font-size="14" font-weight="700">'+axes[i].k+'</text>';
+    }
+    var dp=[];for(var i=0;i<N;i++){var p=pt(i,R*axes[i].v/MAX);dp.push(p[0].toFixed(1)+','+p[1].toFixed(1));}
+    s+='<polygon points="'+dp.join(' ')+'" fill="rgba(234,138,92,.28)" stroke="#ea8a5c" stroke-width="2"/>';
+    for(var i=0;i<N;i++){var p=pt(i,R*axes[i].v/MAX);s+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.6" fill="#ea8a5c"/>';}
+    svg.innerHTML=s;
+  })();
+
+  /* lightbox */
+  var lb=document.getElementById('lb'),lbImg=lb.querySelector('img'),lbCap=lb.querySelector('.cap'),imgs=[],idx=0;
+  function collect(){imgs=[].slice.call(document.querySelectorAll('.lb'));}
+  function show(i){idx=(i+imgs.length)%imgs.length;var el=imgs[idx];lbImg.src=el.src;lbCap.textContent=el.dataset.cap||'';}
+  function openLB(el){collect();show(imgs.indexOf(el));lb.classList.add('open');}
+  function closeLB(){lb.classList.remove('open');}
+  document.addEventListener('click',function(e){if(e.target.classList&&e.target.classList.contains('lb'))openLB(e.target);});
+  lb.querySelector('.x').onclick=closeLB;
+  lb.querySelector('.prev').onclick=function(e){e.stopPropagation();show(idx-1);};
+  lb.querySelector('.next').onclick=function(e){e.stopPropagation();show(idx+1);};
+  lb.onclick=function(e){if(e.target===lb||e.target===lbImg)closeLB();};
+  document.addEventListener('keydown',function(e){if(!lb.classList.contains('open'))return;
+    if(e.key==='Escape')closeLB();if(e.key==='ArrowLeft')show(idx-1);if(e.key==='ArrowRight')show(idx+1);});
+
+  /* cursor */
+  if(matchMedia('(hover:hover) and (pointer:fine)').matches){
+    var dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing'),mx=innerWidth/2,my=innerHeight/2,rx=mx,ry=my;
+    addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';});
+    (function loop(){rx+=(mx-rx)*.18;ry+=(my-ry)*.18;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+    document.querySelectorAll('a,.lb,canvas').forEach(function(el){el.addEventListener('mouseenter',function(){ring.classList.add('hover');});el.addEventListener('mouseleave',function(){ring.classList.remove('hover');});});
+  }
+</script>
+</body>
+</html>
